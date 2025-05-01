@@ -1,3 +1,4 @@
+use crate::error_log::{ErrorCode, ErrorLog};
 use crate::sensor::SensorInput;
 use crate::watchdog::Watchdog;
 
@@ -13,18 +14,23 @@ pub enum EngineState {
 #[derive(Debug)]
 pub struct EcuState {
     pub state: EngineState,
+    watchdog: Watchdog,
+    pub errors: ErrorLog,
 }
 
 impl EcuState {
-    pub fn new() -> Self {
+    pub fn new(watchdog_timeout_secs: u64) -> Self {
         Self {
             state: EngineState::Off,
+            watchdog: Watchdog::new(watchdog_timeout_secs),
+            errors: ErrorLog::default(),
         }
     }
 
-    pub fn update(&mut self, input: &impl SensorInput, watchdog: &mut Watchdog) {
-        if watchdog.expired() {
+    pub fn update(&mut self, input: &impl SensorInput) {
+        if self.watchdog.expired() {
             self.state = EngineState::Error;
+            self.errors.record(ErrorCode::WatchdogTimeout);
             return;
         }
 
@@ -32,15 +38,18 @@ impl EcuState {
         let rpm = input.read_rpm();
 
         self.state = match (rpm, temp) {
-            (_, t) if t > 100.0 => EngineState::Overheated,
+            (_, t) if t > 100.0 => {
+                self.errors.record(ErrorCode::Overheated);
+                EngineState::Overheated
+            }
             (0.0, _) => EngineState::Idle,
             (r, _) if r > 0.0 => EngineState::Running,
             _ => EngineState::Off,
         };
 
-        // 若狀態正常，代表有在運作，重設 watchdog
+        // 正常流程就重設 watchdog
         if !matches!(self.state, EngineState::Error | EngineState::Overheated) {
-            watchdog.reset();
+            self.watchdog.reset();
         }
     }
 }
