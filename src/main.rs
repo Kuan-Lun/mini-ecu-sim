@@ -3,13 +3,16 @@ mod sensor;
 mod state;
 mod watchdog;
 
-use sensor::MockSensor;
-use state::EcuState;
+use std::fs::File;
+use std::io::Write;
 use std::thread::sleep;
 use std::time::Duration;
 
+use sensor::MockSensor;
+use state::EcuState;
+
 fn main() {
-    let mut ecu = EcuState::new(2); // watchdog timeout = 2 秒
+    let mut ecu = EcuState::new(2);
 
     let mock_sensor = MockSensor {
         temp: 25.0,
@@ -19,13 +22,19 @@ fn main() {
     ecu.update(&mock_sensor);
     println!("ECU State (1st update): {:?}", ecu.state);
 
-    sleep(Duration::from_secs(3)); // 模擬掛住了
+    sleep(Duration::from_secs(3));
     ecu.update(&mock_sensor);
     println!("ECU State (2nd update): {:?}", ecu.state);
 
-    println!("Error log: {:?}", ecu.errors.history);
+    // ✅ 印出 JSON
+    let json = serde_json::to_string_pretty(&ecu.errors).unwrap();
+    println!("Error log in JSON:\n{}", json);
 
-    if let Some(code) = ecu.errors.latest() {
-        println!("Latest error: {:?}", code);
+    // ✅ 選擇性寫入檔案
+    let mut file = File::create("errors.json").unwrap();
+    writeln!(file, "{}", json).unwrap();
+
+    if let Some(latest) = ecu.errors.latest() {
+        println!("Most recent error: {:?}", latest);
     }
 }

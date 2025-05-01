@@ -1,10 +1,12 @@
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 pub enum ErrorCode {
     WatchdogTimeout,
     Overheated,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct ErrorLog {
     pub history: Vec<ErrorCode>,
 }
