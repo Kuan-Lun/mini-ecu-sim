@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-06-19
+
+### Added
+
+- Added RFC3339 UTC timestamp to each error entry
+- Introduced `ErrorEntry` struct to replace plain `ErrorCode` log entries
+- Integrated `chrono` crate for timestamp generation
+- JSON output now includes precise occurrence time for each fault
+
+### Changed
+
+- `ErrorLog.history` now stores `Vec<ErrorEntry>` instead of `Vec<ErrorCode>`
+
+---
+
 ## [0.2.0] - 2025-06-19
 
 ### Added
