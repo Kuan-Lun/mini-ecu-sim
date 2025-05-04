@@ -26,11 +26,11 @@ fn main() {
     ecu.update(&mock_sensor);
     println!("ECU State (2nd update): {:?}", ecu.state);
 
-    // ✅ 印出 JSON
+    // 印出 JSON
     let json = serde_json::to_string_pretty(&ecu.errors).unwrap();
     println!("Error log in JSON:\n{}", json);
 
-    // ✅ 選擇性寫入檔案
+    // 選擇性寫入檔案
     let mut file = File::create("errors.json").unwrap();
     writeln!(file, "{}", json).unwrap();
 
